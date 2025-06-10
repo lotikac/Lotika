@@ -1,0 +1,657 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lotika</title>
+    <style>
+        :root {
+            --background-color: #1e1e1e;
+            --surface-color: #2d2d2d;
+            --primary-color: #2ecc71; /* Emerald - "Beaty Green" - BRIGHT */
+            --primary-variant-color: #27ae60; /* Nephritis - Darker "Beaty Green" */
+            --primary-color-translucent: rgba(46, 204, 113, 0.3); /* Translucent "Beaty Green" */
+            --secondary-color: #03dac6; /* Teal - kept for contrast */
+            --text-color: #e0e0e0;
+            --error-color: #FF4136; /* Brighter Red for text errors and little card lose background */
+            --error-background-color: #8c535d; /* Muted red for lose card background */
+            --success-color: #2ecc71; /* Using primary "Beaty Green" for general success */
+            --win-card-background-color: #1e8449; /* Darker green for the main win card background */
+            --partial-win-color: #ffc107; /* Amber for partial win text/accent */
+            --partial-win-background-color: #594502; /* Dark Amber for partial win card background */
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --text-color-muted: #b0b0b0; /* Lightened for better readability on dark bg */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Default, will be changed by JS for login */
+            min-height: 100vh;
+            padding: 20px;
+            overflow-y: auto; /* Allow scrolling if content overflows */
+        }
+
+        .container {
+            background-color: var(--surface-color);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 450px; /* Default max-width for login and mobile main app */
+            text-align: center;
+            margin-bottom: 20px; /* Add margin to bottom for multiple containers */
+        }
+
+        h1, h2 { /* h1 is no longer used for main title */
+            margin-bottom: 20px;
+        }
+
+        h2 { /* Specific to Check Number heading now */
+            color: var(--secondary-color);
+            font-size: 1.8em;
+            margin-top: 0; /* Will be spaced by info-card's margin or grid gap */
+        }
+
+        input[type="tel"],
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid var(--text-color-muted);
+            border-radius: 4px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-size: 1em; 
+        }
+
+        #lotteryNumber { 
+            font-size: 1.2em; 
+        }
+
+
+        input[type="tel"]:focus,
+        input[type="password"]:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px var(--primary-color-translucent);
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--primary-variant-color);
+        }
+
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+        
+        .error-message {
+            color: var(--error-color);
+            margin-top: 10px;
+            min-height: 1.2em;
+            font-size: 0.9em;
+        }
+
+        .result-message {
+            margin-top: 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+            min-height: 1.5em; 
+            opacity: 0; /* Initial state for animation */
+            transform: translateY(10px); /* Initial state for animation */
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+            will-change: opacity, transform; /* Performance hint */
+            text-align: center; /* Ensure text alignment is consistent */
+        }
+
+        .result-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .result-message.win {
+            background-color: var(--win-card-background-color); 
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+        }
+
+        .result-message.lose {
+            background-color: var(--error-background-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+        }
+        
+        .result-message.partial-win {
+            background-color: var(--partial-win-background-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+        }
+
+        .checked-number-card {
+            display: inline-block;
+            background-color: rgba(255, 255, 255, 0.2); 
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold; 
+            margin-right: 8px;
+            color: white; 
+        }
+
+        .result-message.win .checked-number-card {
+            background-color: var(--primary-color); 
+            color: white; 
+        }
+
+        .result-message.lose .checked-number-card {
+            background-color: var(--error-color); 
+        }
+        
+        .result-message.partial-win .checked-number-card {
+            background-color: var(--partial-win-color);
+            color: var(--background-color); 
+        }
+
+
+        #loginSection { /* loginSection remains a standard container */
+             /* max-width: 450px; is inherited from .container */
+        }
+        #mainAppSection { /* mainAppSection specific styling, also a .container */
+            display: none;
+            /* max-width will be adjusted by media query */
+        }
+
+        .card-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px; /* Space below title/logout and user-info bar */
+        }
+
+        .app-card-title {
+            font-size: 1.5em;
+            color: var(--primary-color);
+            text-align: left;
+            margin-bottom: 0; /* Handled by card-header-flex */
+            font-weight: bold;
+        }
+
+        .user-info {
+            display: flex;
+            justify-content: space-between; /* Phone on left, timer on right */
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: var(--background-color);
+            border-radius: 4px;
+        }
+
+        .user-info span { /* Default for spans within user-info */
+            font-size: 0.9em;
+        }
+        
+        #welcomeUserSpan { /* Specific style for the phone number */
+            font-size: 1.1em; /* Increased font size */
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        #timerDisplay {
+            font-weight: bold;
+            color: var(--secondary-color);
+            font-size: 1.5em; 
+        }
+
+        #logoutButton {
+            width: auto;
+            padding: 8px 15px;
+            background-color: var(--error-color);
+            font-size: 0.9em;
+        }
+        #logoutButton:hover {
+            background-color: #b00020; 
+        }
+
+        .info-card {
+            background-color: var(--background-color); 
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px; /* Space before "Check Your Number" heading */
+            text-align: center;
+            border: 1px solid var(--primary-color-translucent); 
+        }
+
+        .info-card p {
+            color: var(--text-color);
+            font-size: 1.1em; 
+            font-style: normal; 
+        }
+
+        .welcome-message-container {
+            margin-bottom: 25px; 
+            text-align: center; 
+        }
+
+        .welcome-message-container h3 {
+            color: var(--primary-color);
+            font-size: 1.6em; 
+            margin-bottom: 10px;
+        }
+
+        .welcome-message-container p {
+            color: var(--text-color-muted);
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        .content-section {
+            background-color: var(--background-color);
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid var(--primary-color-translucent);
+            text-align: left;
+            width: 100%; 
+        }
+        
+        .main-app-grid > .content-section {
+            margin-top: 0; 
+        }
+
+
+        .content-section h3 {
+            color: var(--primary-color);
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--primary-color-translucent);
+            padding-bottom: 8px;
+        }
+
+        .content-section ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .content-section li {
+            margin-bottom: 10px;
+            font-size: 0.95em;
+            line-height: 1.6;
+            color: var(--text-color-muted);
+        }
+
+        .content-section li strong {
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        .main-app-grid {
+            display: flex;
+            flex-direction: column; 
+            gap: 25px; 
+        }
+
+        .check-number-column,
+        .how-to-use-column,
+        .lotika-rules-column {
+            width: 100%; 
+        }
+        
+        .check-number-column {
+            text-align: center; 
+        }
+
+
+        @media (min-width: 1024px) {
+            #mainAppSection.container {
+                max-width: 1140px; 
+            }
+
+            .main-app-grid {
+                flex-direction: row; 
+                justify-content: space-between;
+                align-items: flex-start; 
+                gap: 20px; 
+            }
+
+            .check-number-column,
+            .how-to-use-column,
+            .lotika-rules-column {
+                flex: 1; 
+                width: auto; 
+            }
+            
+            .content-section { 
+                 text-align: left;
+            }
+        }
+
+    </style>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+
+    <div id="loginSection" class="container">
+        <div class="welcome-message-container">
+            <h3>Welcome to Lotika!</h3>
+            <p>Your quick and easy way to check win numbers. and win <strong>100,000 Birr</strong>. To start, Enter your phone and PIN to get started and see if luck is on your side today!</p>
+        </div>
+        <h2>Login</h2>
+        <input type="tel" id="phoneNumber" placeholder="Phone (09XXXXXXXX)" aria-label="Phone Number" maxlength="10">
+        <input type="password" id="pin" placeholder="PIN" aria-label="PIN" maxlength="10">
+        <button id="loginButton">Login</button>
+        <p id="loginError" class="error-message" aria-live="polite"></p>
+    </div>
+
+    <div id="mainAppSection" class="container">
+        <div class="card-header-flex">
+            <h3 class="app-card-title">Lotika</h3>
+            <button id="logoutButton">Logout</button>
+        </div>
+        <div class="user-info">
+            <span id="welcomeUserSpan" aria-label="User phone number"></span>
+            <span id="timerDisplay" aria-live="polite">30:00</span>
+        </div>
+
+        <div class="main-app-grid">
+            <div class="check-number-column">
+                <div class="info-card">
+                    <p> ▶️ The Next Round starts on 6 AM</p>
+                </div>
+                <h2>Check Your Number</h2>
+                <input type="text" id="lotteryNumber" placeholder="Number (XX-XX-XX)" aria-label="Lottery Number" maxlength="8">
+                <button id="checkNumberButton">Check Number</button>
+                <p id="resultMessage" class="result-message" aria-live="polite"></p>
+            </div>
+
+            <div class="content-section how-to-use-column">
+                <h3>How to Use Lotika</h3>
+                <ul>
+                    <li><strong>Login:</strong> After you paid, Enter your phone number (e.g., 09XXXXXXXX) and your PIN to access page.</li>
+                    <li><strong>Check Number:</strong> In the 'Check Your Number' section, type your lottery number using the XX-XX-XX format (e.g., 12-34-56).</li>
+                    <li><strong>Submit:</strong> Click the 'Check Number' button or press Enter when the input field is focused.</li>
+                    <li><strong>View Result:</strong> The outcome will appear below the button, indicating if your number is a winner, a hint match (after several attempts), or not a winner. you can check many numbers in the given time only</li>
+                    <li><strong>Session:</strong> Your session is active for 3 minutes. You'll be logged out automatically when the timer expires. and stay connected to our Telegram</li>
+                    <li><strong>start:</strong> After you paid you will get the unique pin code from Author, you must stay connected to Author on telegram to verify your payment and get your PIN code</li>
+                    <li><strong>Win:</strong> when you check the right number (winning number) you will get 'congratulation the number is winning number'</li>
+                    <li><strong>Reward:</strong> The reward amount for one checking right number (winning number) is 100,000 Birr</li>
+                    <li><strong>important note:</strong> you will recieve the reward through this phone number only, the checked number only verify withphone number you started with</li>
+                    <li><strong>Price:</strong> Fair price per 10 minute, seted as checking one number is 1.Birr</li>
+                </ul>
+            </div>
+
+            <div class="content-section lotika-rules-column">
+                <h3>Lotika Rules</h3>
+                <ul>
+                    <li><strong>Number Format:</strong> All lottery numbers must be entered in the XX-XX-XX format. Only digits are allowed, and hyphens will be auto-inserted.</li>
+                    <li><strong>Winning:</strong> To win, your number must be an exact match to one of the official winning numbers for the current draw period.</li>
+                    <li><strong>Partial Hints:</strong> After checks, if your submitted number contains digits that are part of a winning number, a helpful hint might be displayed.</li>
+                    <li><strong>Draw Information:</strong> The message indicates when new winning numbers are typically set.</li>
+                    <li><strong>Fair Play:</strong> Use your account responsibly. The system tracks check attempts.</li>
+                    <li><strong>Options:</strong> You can pay for the next session time and get new log in PIN automatically for each next session times without paying one by one </li>
+                    <li><strong>Time:</strong> you can get free time PIN from Author by adding users on telegram, this may not always exist</li>
+                    <li><strong>Win:</strong> if you check(get) the right number we will verify who get it, but you must take the screenshot of the winning number and send to Author to verify and get your Reward</li>
+                    <li><strong>Reward:</strong> you must enter your correct phone number that which you started with , double check your phone number match with your phone number you paid to start. if you are checking without paying you will not get the right number and your winning number Automatically disqualified</li>
+                   <li><strong>Win 100,000 Birr Now</strong>!</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CORRECT_PIN = "1234";
+        const SESSION_DURATION_MINUTES = 10;
+        const WINNING_NUMBERS = ["55-55-55"];
+        const HINT_DIGITS = ['1', '2', '3']; 
+
+        let sessionTimeoutId = null;
+        let timerIntervalId = null;
+        let remainingTimeSeconds = SESSION_DURATION_MINUTES * 60;
+        let loggedInUserPhoneNumber = ''; 
+        let checkAttempts = 0; 
+
+        // DOM Elements
+        const loginSection = document.getElementById('loginSection');
+        const mainAppSection = document.getElementById('mainAppSection');
+        
+        const phoneNumberInput = document.getElementById('phoneNumber');
+        const pinInput = document.getElementById('pin');
+        const loginButton = document.getElementById('loginButton');
+        const loginError = document.getElementById('loginError');
+
+        const welcomeUserSpan = document.getElementById('welcomeUserSpan'); 
+        const timerDisplay = document.getElementById('timerDisplay');
+        const logoutButton = document.getElementById('logoutButton');
+        const lotteryNumberInput = document.getElementById('lotteryNumber');
+        const checkNumberButton = document.getElementById('checkNumberButton');
+        const resultMessage = document.getElementById('resultMessage');
+
+        function showLogin() {
+            loginSection.style.display = 'block';
+            mainAppSection.style.display = 'none';
+            document.body.style.justifyContent = 'center'; // Center login card
+            
+            phoneNumberInput.value = '';
+            pinInput.value = '';
+            loginError.textContent = '';
+            resultMessage.innerHTML = ''; 
+            resultMessage.className = 'result-message'; 
+            resultMessage.classList.remove('show'); 
+            lotteryNumberInput.value = '';
+            if (welcomeUserSpan) { 
+                 welcomeUserSpan.textContent = ''; 
+            }
+
+            clearTimeout(sessionTimeoutId);
+            clearInterval(timerIntervalId);
+            remainingTimeSeconds = SESSION_DURATION_MINUTES * 60; 
+            updateTimerDisplay(); 
+            loggedInUserPhoneNumber = '';
+            checkAttempts = 0; 
+            document.body.scrollTop = 0; 
+            document.documentElement.scrollTop = 0; 
+        }
+
+        function showMainApp() {
+            loginSection.style.display = 'none';
+            mainAppSection.style.display = 'block';
+            document.body.style.justifyContent = 'flex-start'; // Align main app to top
+            
+            if (welcomeUserSpan && loggedInUserPhoneNumber) {
+                welcomeUserSpan.textContent = `${loggedInUserPhoneNumber}`; 
+            }
+            startSessionTimer();
+            document.body.scrollTop = 0; 
+            document.documentElement.scrollTop = 0;
+        }
+
+        function validatePhoneNumber(phone) {
+            return /^09\d{8}$/.test(phone);
+        }
+
+        function validatePin(pin) {
+            return pin === CORRECT_PIN; 
+        }
+        
+        function validateLotteryNumber(number) {
+            return /^\d{2}-\d{2}-\d{2}$/.test(number);
+        }
+
+        function handleLogin() {
+            const phone = phoneNumberInput.value.trim();
+            const pin = pinInput.value.trim();
+
+            if (!validatePhoneNumber(phone)) {
+                loginError.textContent = 'Invalid phone number';
+                return;
+            }
+            if (!validatePin(pin)) {
+                loginError.textContent = 'Invalid PIN'; 
+                return;
+            }
+            
+            loginError.textContent = '';
+            loggedInUserPhoneNumber = phone; 
+            showMainApp();
+        }
+
+        function handleLogout() {
+            showLogin();
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(remainingTimeSeconds / 60);
+            const seconds = remainingTimeSeconds % 60;
+            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function startSessionTimer() {
+            clearTimeout(sessionTimeoutId);
+            clearInterval(timerIntervalId);
+            remainingTimeSeconds = SESSION_DURATION_MINUTES * 60;
+            
+            updateTimerDisplay(); 
+
+            sessionTimeoutId = setTimeout(handleLogout, remainingTimeSeconds * 1000);
+            
+            timerIntervalId = setInterval(() => {
+                remainingTimeSeconds--;
+                updateTimerDisplay();
+                if (remainingTimeSeconds <= 0) {
+                    handleLogout(); 
+                }
+            }, 1000);
+        }
+        
+        function getDigitsFromString(numberString) {
+            const digits = numberString.replace(/-/g, '').split('');
+            return new Set(digits);
+        }
+
+        function handleCheckNumber() {
+            resultMessage.classList.remove('show');
+            resultMessage.innerHTML = ''; 
+            resultMessage.className = 'result-message'; 
+
+            const originalButtonText = checkNumberButton.textContent;
+            checkNumberButton.disabled = true;
+            checkNumberButton.textContent = 'Checking...';
+            
+            setTimeout(() => {
+                checkAttempts++; 
+
+                const number = lotteryNumberInput.value.trim();
+                let messageText = '';
+                let messageTypeClass = '';
+
+                if (!validateLotteryNumber(number)) {
+                    messageText = `Invalid format: <span class="checked-number-card">${number || 'Empty'}</span>`;
+                    messageTypeClass = 'lose';
+                } else if (WINNING_NUMBERS.includes(number)) {
+                    messageText = `Congratulations! <span class="checked-number-card">${number}</span> is a winning number!`;
+                    messageTypeClass = 'win';
+                } else {
+                    const userDigits = getDigitsFromString(number);
+                    const foundHintDigits = HINT_DIGITS.filter(digit => userDigits.has(digit));
+
+                    if (foundHintDigits.length > 0 && (checkAttempts > 0 && checkAttempts % 5 === 0)) {
+                        messageText = `Hint: Your number <span class="checked-number-card">${number}</span> contains ${foundHintDigits.length} digit present in a winning number.`;
+                        messageTypeClass = 'partial-win';
+                    } else {
+                        messageText = `<span class="checked-number-card">${number}</span> is not a winning number. Better luck next time!`;
+                        messageTypeClass = 'lose';
+                    }
+                }
+                
+                resultMessage.innerHTML = messageText;
+                if (messageTypeClass) {
+                    resultMessage.classList.add(messageTypeClass);
+                }
+                
+                setTimeout(() => {
+                    resultMessage.classList.add('show');
+                }, 10); 
+
+                checkNumberButton.disabled = false;
+                checkNumberButton.textContent = originalButtonText;
+
+            }, 6000); 
+        }
+
+        function formatLotteryNumberInput(event) {
+            let value = event.target.value.replace(/\D/g, ''); 
+            
+            if (value.length > 6) {
+                value = value.slice(0, 6);
+            }
+
+            let formattedValue = '';
+            if (value.length > 0) {
+                formattedValue += value.substring(0, 2);
+            }
+            if (value.length > 2) {
+                formattedValue += '-' + value.substring(2, 4);
+            }
+            if (value.length > 4) {
+                formattedValue += '-' + value.substring(4, 6);
+            }
+            event.target.value = formattedValue;
+        }
+
+        // Event Listeners
+        loginButton.addEventListener('click', handleLogin);
+        logoutButton.addEventListener('click', handleLogout);
+        checkNumberButton.addEventListener('click', handleCheckNumber);
+        lotteryNumberInput.addEventListener('input', formatLotteryNumberInput);
+
+
+        pinInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                handleLogin();
+            }
+        });
+         phoneNumberInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                 pinInput.focus(); 
+            }
+        });
+        
+        lotteryNumberInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                handleCheckNumber();
+            }
+        });
+
+        // Initial State
+        showLogin();
+
+    </script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
